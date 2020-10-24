@@ -1,6 +1,6 @@
 import { MikroORM } from "@mikro-orm/core";
 import { __prod__ } from "./constants";
-import { Post } from "./entities/Post";
+import ModelsObj from "./entities/";
 
 require('dotenv').config({ path: __dirname + '/.env.local' });
 
@@ -10,14 +10,18 @@ const options = {
     password: process.env.DATABASE_PASSWORD,
     port: Number(process.env.DATABASE_PORT),
     debug: !__prod__,
-    type: "mysql",
-    entities: [Post],
+    type: process.env.DATABASE_DRIVER,
+    entities: Object.values(ModelsObj),
     migrations: {
         tableName: 'mikro_orm_migrations', // name of database table with log of executed transactions
         path: __dirname + '/migrations', // path to the folder with migrations
         pattern: /^[\w-]+\d+\.[tj]s$/, // regex pattern for the migration files
     },
-    // clientUrl: process.env.CLIENT_URL,
+    forceUtcTimezone: true,
+    strict: true,
+    cache: {
+        enabled: false,
+    }
 
 } as Parameters<typeof MikroORM.init>[0];
 

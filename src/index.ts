@@ -10,7 +10,7 @@ const main = async () => {
 
     const orm = await db();
     const post = new Post("Welcome Text odd");
-    // orm.em.persistAndFlush(post);
+    orm.em.persistAndFlush(post);
 
 }
 

@@ -1,9 +1,7 @@
 import { Entity } from "@mikro-orm/core/decorators/Entity";
-import { OneToMany } from "@mikro-orm/core/decorators/OneToMany";
 import { PrimaryKey } from "@mikro-orm/core/decorators/PrimaryKey";
 import { Property } from "@mikro-orm/core/decorators/Property";
-import { Collection } from "@mikro-orm/core/entity/Collection";
-import { Post } from "./Post";
+
 
 @Entity()
 export class User {
@@ -32,9 +30,6 @@ export class User {
 
     @Property()
     born?: Date;
-
-    @OneToMany(() => Post, post => post.title)
-    posts = new Collection<Post>(this);
 
 
     constructor(name: string, email: string) {
