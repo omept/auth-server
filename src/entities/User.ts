@@ -1,34 +1,46 @@
 import { Entity } from "@mikro-orm/core/decorators/Entity";
 import { PrimaryKey } from "@mikro-orm/core/decorators/PrimaryKey";
 import { Property } from "@mikro-orm/core/decorators/Property";
+import { Field } from "type-graphql";
 
 
 @Entity()
 export class User {
-
+    @Field()
     @PrimaryKey()
     id!: number;
 
-    @Property()
+    @Field(() => String)
+    @Property({ type: "date" })
     createdAt = new Date();
 
-    @Property({ onUpdate: () => new Date() })
+    @Field(() => String)
+    @Property({ type: "date", onUpdate: () => new Date() })
     updatedAt = new Date();
 
-    @Property()
+    @Field(() => String)
+    @Property({ type: "text" })
     name!: string;
 
-    @Property()
+    @Field(() => String)
+    @Property({ type: "text", unique: true })
+    username!: string;
+
+    @Field(() => String)
+    @Property({ type: "text", unique: true })
     email!: string;
 
+    @Property({ type: "text" })
+    password!: string;
 
-    @Property()
+
+
+    @Property({ type: 'boolean' })
     termsAccepted = false;
 
-    @Property()
-    identities?: string[];
 
-    @Property()
+    @Field(() => String)
+    @Property({ type: 'date' })
     born?: Date;
 
 

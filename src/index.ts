@@ -1,16 +1,36 @@
-import { MikroORM } from "@mikro-orm/core";
+import "reflect-metadata"
 import { __prod__ } from "./constants";
-import { Post } from "./entities/Post";
-import microConfig, { db } from "./mikro-orm.config";
+import { db } from "./mikro-orm.config";
+import express from 'express';
+import { ApolloServer } from 'apollo-server-express';
+import { buildSchema } from 'type-graphql';
+import { HelloResolver } from "./resolvers/hello";
+import { PostResolver } from "./resolvers/post-resolver";
 
 require('dotenv').config({ path: __dirname + '/.env.local' });
 
-console.log(microConfig);
 const main = async () => {
-
+    // init database
     const orm = await db();
-    const post = new Post("Welcome Text odd");
-    orm.em.persistAndFlush(post);
+
+    // init express
+    const app = express();
+
+    // init qraphql
+    const apolloServer = new ApolloServer({
+        schema: await buildSchema({
+            resolvers: [HelloResolver, PostResolver],
+            validate: false
+        }),
+        context: () => ({ em: orm.em })
+    });
+
+    apolloServer.applyMiddleware({ app });
+
+    app.listen(process.env.NODE_SERVER_PORT, () => {
+        console.log(`Server started on port ${process.env.NODE_SERVER_PORT}`);
+    });
+
 
 }
 
