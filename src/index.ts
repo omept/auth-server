@@ -10,12 +10,31 @@ import { UserResolver } from "./resolvers/user-resolver";
 
 require('dotenv').config({ path: __dirname + '/.env.local' });
 
+import redis from 'redis';
+import session from 'express-session';
+import connectRedis from 'connect-redis';
+
+let RedisStore = connectRedis(session)
+let redisClient = redis.createClient()
+
+
+
 const main = async () => {
     // init database
     const orm = await db();
 
     // init express
     const app = express();
+
+    // redis session for express
+    app.use(
+        session({
+            store: new RedisStore({ client: redisClient }),
+            secret: 'keyboard cat',
+            resave: false,
+        })
+    );
+
 
     // init qraphql
     const apolloServer = new ApolloServer({
@@ -29,6 +48,7 @@ const main = async () => {
         }),
         context: () => ({ em: orm.em })
     });
+
 
     apolloServer.applyMiddleware({ app });
 
