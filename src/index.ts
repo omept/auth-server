@@ -29,9 +29,17 @@ const main = async () => {
     // redis session for express
     app.use(
         session({
-            store: new RedisStore({ client: redisClient }),
-            secret: 'keyboard cat',
+            name: "redditlikeqid",
+            store: new RedisStore({ client: redisClient, ttl: process.env.SESSION_APP_TTL }),
+            secret: String(process.env.SESSION_APP_KEY),
             resave: false,
+            saveUninitialized: false,
+            cookie: {
+                maxAge: Number(process.env.SESSION_APP_COOKIE_TTL),
+                httpOnly: true,
+                secure: __prod__,
+                sameSite: 'lax'
+            }
         })
     );
 
@@ -46,7 +54,7 @@ const main = async () => {
             ],
             validate: false
         }),
-        context: () => ({ em: orm.em })
+        context: ({ req, res }) => ({ em: orm.em, req, res })
     });
 
 
