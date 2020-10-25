@@ -5,7 +5,7 @@ export default class RegistrationParams {
     @Field()
     name: string;
 
-    @Field()
+    @Field({ nullable: true })
     username: string;
 
     @Field()

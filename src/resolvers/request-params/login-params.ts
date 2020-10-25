@@ -2,11 +2,11 @@ import { InputType, Field } from "type-graphql";
 
 @InputType()
 export default class LoginParams {
-    @Field()
+    @Field({ nullable: true })
     email: string;
 
-    @Field()
-    username: string;
+    @Field({ nullable: true })
+    username!: string;
 
     @Field()
     password: string;
