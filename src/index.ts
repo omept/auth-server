@@ -6,6 +6,7 @@ import { ApolloServer } from 'apollo-server-express';
 import { buildSchema } from 'type-graphql';
 import { HelloResolver } from "./resolvers/hello";
 import { PostResolver } from "./resolvers/post-resolver";
+import { UserResolver } from "./resolvers/user-resolver";
 
 require('dotenv').config({ path: __dirname + '/.env.local' });
 
@@ -19,7 +20,11 @@ const main = async () => {
     // init qraphql
     const apolloServer = new ApolloServer({
         schema: await buildSchema({
-            resolvers: [HelloResolver, PostResolver],
+            resolvers: [
+                HelloResolver,
+                PostResolver,
+                UserResolver
+            ],
             validate: false
         }),
         context: () => ({ em: orm.em })

@@ -1,12 +1,12 @@
 import { Entity } from "@mikro-orm/core/decorators/Entity";
 import { PrimaryKey } from "@mikro-orm/core/decorators/PrimaryKey";
 import { Property } from "@mikro-orm/core/decorators/Property";
-import { Field } from "type-graphql";
+import { Field, Int, ObjectType } from "type-graphql";
 
-
+@ObjectType()
 @Entity()
 export class User {
-    @Field()
+    @Field(() => Int)
     @PrimaryKey()
     id!: number;
 
@@ -19,28 +19,28 @@ export class User {
     updatedAt = new Date();
 
     @Field(() => String)
-    @Property({ type: "text" })
+    @Property({ type: "text", nullable: true })
     name!: string;
 
     @Field(() => String)
-    @Property({ type: "text", unique: true })
+    @Property({ type: "text" })
     username!: string;
 
     @Field(() => String)
-    @Property({ type: "text", unique: true })
+    @Property({ type: "text" })
     email!: string;
 
     @Property({ type: "text" })
     password!: string;
 
 
-
+    @Field(() => Boolean)
     @Property({ type: 'boolean' })
     termsAccepted = false;
 
 
     @Field(() => String)
-    @Property({ type: 'date' })
+    @Property({ type: 'date', nullable: true })
     born?: Date;
 
 
