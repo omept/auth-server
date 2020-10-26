@@ -7,7 +7,7 @@ import { buildSchema } from 'type-graphql';
 import { HelloResolver } from "./resolvers/hello";
 import { PostResolver } from "./resolvers/post-resolver";
 import { UserResolver } from "./resolvers/user-resolver";
-
+import cors from 'cors';
 require('dotenv').config({ path: __dirname + '/.env.local' });
 
 import redis from 'redis';
@@ -26,6 +26,10 @@ const main = async () => {
     // init express
     const app = express();
 
+    app.use(cors({
+        origin: process.env.WEB_CLIENT_URL,
+        credentials: true
+    }));
     // redis session for express
     app.use(
         session({
@@ -58,7 +62,9 @@ const main = async () => {
     });
 
 
-    apolloServer.applyMiddleware({ app });
+    apolloServer.applyMiddleware({
+        app, cors: false
+    });
 
     app.listen(process.env.NODE_SERVER_PORT, () => {
         console.log(`Server started on port ${process.env.NODE_SERVER_PORT}`);
