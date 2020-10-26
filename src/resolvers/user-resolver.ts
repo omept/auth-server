@@ -59,7 +59,6 @@ export class UserResolver {
 
         const prevUser = await em.findOne(User, { email });
         if (prevUser) {
-            console.log(prevUser);
             errors.push({ field: "email", message: "email already exists." });
         }
 
@@ -74,6 +73,7 @@ export class UserResolver {
                 return { user };
             }
         } catch (error) {
+            em.clear();
             errors.push({ field: "server_error", message: "error occured while saving" });
         }
 
@@ -88,15 +88,16 @@ export class UserResolver {
         @Ctx() { em, req }: MyContext,
         @Arg('options') options: LoginParams
     ): Promise<LoginResponse> {
-        const { username, email, password } = options;
+        const { username, password } = options;
         let user: User | null;
         let errors = [];
 
-        if (username) {
+        if (username && !ValidateEmail(username)) {
             user = await em.findOne(User, { username });
-        } else if (email) {
-            user = await em.findOne(User, { email });
+        } else if (username && ValidateEmail(username)) {
+            user = await em.findOne(User, { email: username });
         } else {
+            console.log('invalid user');
             user = null;
         }
 
