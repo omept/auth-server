@@ -5,6 +5,9 @@ import { User } from "../entities/User";
 import RegistrationParams from "./request-params/register-params";
 import LoginParams from "./request-params/login-params";
 import LoginResponse from "./responses/login-response";
+import RegistrationResponse from "./responses/registration-response";
+import FieldError from "./responses/field-error";
+import { ValidateEmail } from "../utils/validateEmail";
 
 
 
@@ -26,20 +29,56 @@ export class UserResolver {
         return user ?? null;
     }
 
-    @Mutation(() => User, { nullable: true })
+    @Mutation(() => RegistrationResponse, { nullable: true })
     async register(
         @Ctx() { em, req }: MyContext,
         @Arg('options') options: RegistrationParams
-    ): Promise<User | null> {
+    ): Promise<RegistrationResponse> {
+        const errors: FieldError[] = [];
+        // validate 
+        const { email, username, password, name } = options;
+        if (!ValidateEmail(email)) {
+            errors.push({ field: "email", message: "invalid email length" });
+        }
 
-        const hashPass = await argon2.hash(options.password);
-        const user = em.create(User, { name: options.name, email: options.email, username: options.username, password: hashPass })
-        await em.persistAndFlush(user);
+        if (username.length <= 5) {
+            errors.push({ field: "username", message: "invalid username length. username must be greater than 5" });
+        }
 
-        // set cookie to login
-        req.session.userId = user!.id;
 
-        return user;
+        if (password.length <= 6) {
+            errors.push({ field: "password", message: "invalid password length. password must be greater than 6" });
+        }
+
+
+        if (name.length <= 0) {
+            errors.push({ field: "name", message: "name cannot be empty" });
+        }
+
+
+
+        const prevUser = await em.findOne(User, { email });
+        if (prevUser) {
+            console.log(prevUser);
+            errors.push({ field: "email", message: "email already exists." });
+        }
+
+
+        try {
+            if (!errors.length) {
+                const hashPass = await argon2.hash(options.password);
+                const user = em.create(User, { name, email, username, password: hashPass })
+                await em.persistAndFlush(user);
+                // set cookie to login
+                req.session.userId = user!.id;
+                return { user };
+            }
+        } catch (error) {
+            errors.push({ field: "server_error", message: "error occured while saving" });
+        }
+
+
+        return { errors };
 
     }
 
