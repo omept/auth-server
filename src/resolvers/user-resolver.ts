@@ -39,13 +39,6 @@ export class UserResolver {
     ): Promise<RegistrationResponse> {
 
 
-        // const { from, to, subject } = {
-        //     from: '"George Foo Bar 👻" <foo@example.com>', // sender address
-        //     to: "george@example.com, baz@example.com", // list of receivers
-        //     subject: "Hello world ✔", // Subject line
-        // };
-
-        // await sendEmail(to, from, subject);
 
         const errors: FieldError[] = [];
         // validate 
