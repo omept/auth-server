@@ -1,4 +1,3 @@
-import "reflect-metadata"
 import { __prod__ } from "./constants";
 import { db } from "./mikro-orm.config";
 import express from 'express';
@@ -33,7 +32,7 @@ const main = async () => {
     // redis session for express
     app.use(
         session({
-            name: "redditlikeqid",
+            name: process.env.APP_COOKIE_ID,
             store: new RedisStore({ client: redisClient, ttl: process.env.SESSION_APP_TTL }),
             secret: String(process.env.SESSION_APP_KEY),
             resave: false,

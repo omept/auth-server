@@ -8,6 +8,10 @@ import LoginResponse from "./responses/login-response";
 import RegistrationResponse from "./responses/registration-response";
 import FieldError from "./responses/field-error";
 import { ValidateEmail } from "../utils/validateEmail";
+import { sendEmail } from "../utils/sendEmail";
+import ForgotPasswordParams from "./request-params/forgot-password-params";
+import ForgotPasswordResponse from "./responses/forgot-password-response";
+import { forgotPasswordMail } from "../emails/forgot-password";
 
 
 
@@ -20,7 +24,6 @@ export class UserResolver {
     async me(
         @Ctx() { em, req }: MyContext,
     ): Promise<User | null> {
-        console.log(req.session.userId);
         // not logged in
         if (!req.session.userId) {
             return null;
@@ -34,6 +37,16 @@ export class UserResolver {
         @Ctx() { em, req }: MyContext,
         @Arg('options') options: RegistrationParams
     ): Promise<RegistrationResponse> {
+
+
+        // const { from, to, subject } = {
+        //     from: '"George Foo Bar 👻" <foo@example.com>', // sender address
+        //     to: "george@example.com, baz@example.com", // list of receivers
+        //     subject: "Hello world ✔", // Subject line
+        // };
+
+        // await sendEmail(to, from, subject);
+
         const errors: FieldError[] = [];
         // validate 
         const { email, username, password, name } = options;
@@ -82,6 +95,44 @@ export class UserResolver {
 
     }
 
+    @Mutation(() => ForgotPasswordResponse, { nullable: true })
+    async forgotPassword(
+        @Ctx() { em }: MyContext,
+        @Arg('options') options: ForgotPasswordParams
+    ): Promise<ForgotPasswordResponse> {
+
+        const { username } = options;
+        let user: User | null;
+        let errors = [];
+
+        if (username && !ValidateEmail(username)) {
+            user = await em.findOne(User, { username });
+        } else if (username && ValidateEmail(username)) {
+            user = await em.findOne(User, { email: username });
+        } else {
+            user = null;
+        }
+
+        if (!user) {
+            errors.push({ field: "username", message: "invalid username or email" });
+            return { errors };
+        }
+
+        const { from, to, subject } = {
+            from: String(process.env.EMAIL_FROM), // sender address
+            to: user.email, //"george@example.com, baz@example.com", // list of receivers
+            subject: "Forgot Password", // Subject line
+        };
+
+        const token = "634ufgby8cg87teterGYUS6s*SGWGjfd@&g";
+        const link = `https://georgetheprogrammer.xyz/forgot-password?token=${token}`
+        const forgotPasswordText = forgotPasswordMail(username, link);
+        const sent = await sendEmail(to, from, subject, forgotPasswordText);
+
+        return { sent };
+
+    }
+
 
     @Mutation(() => LoginResponse, { nullable: true })
     async login(
@@ -97,7 +148,6 @@ export class UserResolver {
         } else if (username && ValidateEmail(username)) {
             user = await em.findOne(User, { email: username });
         } else {
-            console.log('invalid user');
             user = null;
         }
 
@@ -121,4 +171,26 @@ export class UserResolver {
     }
 
 
+    @Mutation(() => Boolean, { nullable: true })
+    async logout(
+        @Ctx() { req, res }: MyContext
+    ): Promise<Boolean> {
+        const cookieId = process.env.APP_COOKIE_ID;
+        if (cookieId) {
+            res.clearCookie(cookieId);
+        }
+
+        return new Promise((resolve) => {
+            req.session.destroy((err) => {
+                if (err) {
+                    console.log(err);
+                    resolve(false);
+                    return;
+                }
+                resolve(true);
+            });
+        });
+
+
+    }
 }
