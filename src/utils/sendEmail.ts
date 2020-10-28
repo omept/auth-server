@@ -1,10 +1,10 @@
 import nodemailer from "nodemailer";
 import SMTPTransport from "nodemailer/lib/smtp-transport";
-import { __prod__ } from "src/constants";
+import { __prod__ } from "../constants";
 
 
 // async..await is not allowed in global scope, must use a wrapper
-export async function sendEmail(to: string, from: string, subject: string, text?: string, html?: string) {
+export async function sendEmail(to: string, from: string, subject: string, html?: string, text?: string,) {
     try {
 
         if (!text && !html) {

@@ -9,12 +9,20 @@ import { UserResolver } from "./resolvers/user-resolver";
 import cors from 'cors';
 require('dotenv').config({ path: __dirname + '/.env.local' });
 
-import redis from 'redis';
+import Redis from 'ioredis';
 import session from 'express-session';
 import connectRedis from 'connect-redis';
 
+// set up redis
 let RedisStore = connectRedis(session)
-let redisClient = redis.createClient()
+let redisClient = new Redis(
+    Number(process.env.REDIS_PORT),
+    String(process.env.REDIS_HOST),
+    {
+        username: process.env.REDIS_USERNAME,
+        password: process.env.REDIS_PASSWORD
+    }
+)
 
 
 
@@ -57,7 +65,8 @@ const main = async () => {
             ],
             validate: false
         }),
-        context: ({ req, res }) => ({ em: orm.em, req, res })
+        // pass contex values that can be accessed in all the resolvers
+        context: ({ req, res }) => ({ em: orm.em, req, res, redis: redisClient })
     });
 
 

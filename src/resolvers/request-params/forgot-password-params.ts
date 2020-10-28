@@ -5,6 +5,6 @@ import { InputType, Field } from "type-graphql";
 export default class ForgotPasswordParams {
 
     @Field({ nullable: true })
-    username!: string;
+    usernameOrEmail!: string;
 
 }

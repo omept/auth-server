@@ -12,6 +12,10 @@ import { sendEmail } from "../utils/sendEmail";
 import ForgotPasswordParams from "./request-params/forgot-password-params";
 import ForgotPasswordResponse from "./responses/forgot-password-response";
 import { forgotPasswordMail } from "../emails/forgot-password";
+import { v4 } from 'uuid';
+import { FORGOT_PASSWORD_PREFIX, FORGOT_PASSWORD_DURATION } from "../constants";
+import PasswordResetParams from "./request-params/password-reset-params";
+import PasswordResetResponse from "./responses/password-reset-response";
 
 
 
@@ -90,11 +94,11 @@ export class UserResolver {
 
     @Mutation(() => ForgotPasswordResponse, { nullable: true })
     async forgotPassword(
-        @Ctx() { em }: MyContext,
+        @Ctx() { em, redis }: MyContext,
         @Arg('options') options: ForgotPasswordParams
     ): Promise<ForgotPasswordResponse> {
 
-        const { username } = options;
+        const username = options.usernameOrEmail;
         let user: User | null;
         let errors = [];
 
@@ -117,12 +121,64 @@ export class UserResolver {
             subject: "Forgot Password", // Subject line
         };
 
-        const token = "634ufgby8cg87teterGYUS6s*SGWGjfd@&g";
-        const link = `https://georgetheprogrammer.xyz/forgot-password?token=${token}`
-        const forgotPasswordText = forgotPasswordMail(username, link);
+        const token = v4();
+
+        await redis.set(FORGOT_PASSWORD_PREFIX + user.email, token, 'ex', FORGOT_PASSWORD_DURATION)
+
+        const link = `${process.env.WEB_CLIENT_URL}/forgot-password/${token}`
+        const forgotPasswordText = forgotPasswordMail(user.name, link);
         const sent = await sendEmail(to, from, subject, forgotPasswordText);
 
         return { sent };
+
+    }
+
+
+    @Mutation(() => PasswordResetResponse, { nullable: true })
+    async passwordReset(
+        @Ctx() { em, redis, req, res }: MyContext,
+        @Arg('options') options: PasswordResetParams
+    ): Promise<PasswordResetResponse> {
+
+        const { email, password_token, password } = options;
+        let user: User | null;
+        let errors = [];
+
+
+        // validate and retrieve email
+        if (ValidateEmail(email)) {
+            user = await em.findOne(User, { email });
+        } else {
+            user = null;
+        }
+
+
+
+        if (!user) {
+            errors.push({ field: "email", message: "invalid email" });
+            return { errors };
+        } else {
+            const redisUserToken = await redis.get(FORGOT_PASSWORD_PREFIX + user.email);
+            if (!redisUserToken || (redisUserToken != password_token)) {
+                errors.push({ field: "server_error", message: "token expired" });
+                return { errors };
+            }
+
+            user.password = await argon2.hash(password);
+            em.create(User, user)
+            await em.persistAndFlush(user);
+
+            // clear previous cookie and set cookie for login
+            const cookieId = process.env.APP_COOKIE_ID;
+            if (cookieId) {
+                res.clearCookie(cookieId);
+            }
+
+            await redis.del(FORGOT_PASSWORD_PREFIX + user.email);
+
+            req.session.userId = user!.id;
+            return { user };
+        }
 
     }
 
